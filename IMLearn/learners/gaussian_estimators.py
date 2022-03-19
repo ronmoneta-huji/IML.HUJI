@@ -110,14 +110,10 @@ class UnivariateGaussian:
         log_likelihood: float
             log-likelihood calculated
         """
-        # TODO: can be more efficient?
-        inner = 1
-        for sample in X:
-            coeff = np.sqrt(2 * np.pi * sigma)
-            inner_exponent = (-np.power(sample - mu, 2) / (2 * sigma))
-            expo = np.exp(inner_exponent)
-            inner *= expo / coeff
-        return numpy.log(inner)
+        first_expression = -(X.shape[0] / 2) * np.log(2 * np.pi * sigma)
+        inner_sum = np.sum(np.power(X - mu, 2))
+        second_expression = inner_sum / (2 * sigma)
+        return first_expression - second_expression
 
 
 class MultivariateGaussian:
@@ -165,7 +161,7 @@ class MultivariateGaussian:
         Then sets `self.fitted_` attribute to `True`
         """
         self.mu_ = X.mean(axis=0)
-        np.cov(X, rowvar=False)
+        self.cov_ = np.cov(X, rowvar=False)
 
         self.fitted_ = True
         return self
@@ -196,7 +192,7 @@ class MultivariateGaussian:
         coeff = np.sqrt(pi_factor * cov_det)
 
         x_centered = X - self.mu_
-        cov_inv = numpy.linalg.inv(self.cov_)
+        cov_inv = np.linalg.inv(self.cov_)
         x_centered_trans = x_centered.transpose()
         expo = np.exp(-0.5 * np.dot(np.dot(x_centered_trans, cov_inv), x_centered))
 
@@ -221,4 +217,12 @@ class MultivariateGaussian:
         log_likelihood: float
             log-likelihood calculated over all input data and under given parameters of Gaussian
         """
-        raise NotImplementedError()
+        m, d = X.shape
+        cov_det = np.linalg.det(cov)
+        cov_inv = np.linalg.inv(cov)
+        first_expression = -(m / 2) * ((d * np.log(2 * np.pi)) + np.log(cov_det))
+
+        x_centered = X - mu
+        temp_mat = x_centered @ cov_inv
+        second_expression = np.sum(temp_mat * x_centered) / 2
+        return first_expression - second_expression
