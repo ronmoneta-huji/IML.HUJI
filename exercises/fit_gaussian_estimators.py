@@ -4,8 +4,8 @@ import plotly.graph_objects as go
 import plotly.io as pio
 
 SAMPLES_AMOUNT = 1000
-PLOT_HEIGHT = 300
-PLOT_WIDTH = 300
+PLOT_HEIGHT = 900
+PLOT_WIDTH = 900
 ####univariate gaussian####
 UNI_MU = 10
 UNI_VAR = 1
@@ -44,16 +44,19 @@ def test_univariate_gaussian():
 
     print(uvg.mu_, uvg.var_)
 
+
     # Question 2 - Empirically showing sample mean is consistent
     absolute_distance = []
     for i in range(Q2_INCREMENT, SAMPLES_AMOUNT, Q2_INCREMENT):
         uvg.fit(X[:i])
         absolute_distance.append(np.abs(uvg.mu_ - mu))
+
     go.Figure(
         [go.Scatter(x=np.linspace(Q2_INCREMENT, SAMPLES_AMOUNT, num=SAMPLES_AMOUNT // Q2_INCREMENT, endpoint=True),
                     y=absolute_distance, mode=ABS_DIST_PLOT_MODE, name=ABS_DIST_PLOT_NAME)],
         layout=go.Layout(title=ABS_DIST_PLOT_TITLE, xaxis_title=ABS_DIST_PLOT_XTITLE, yaxis_title=ABS_DIST_PLOT_YTITLE,
                          height=PLOT_HEIGHT)).show()
+
 
     # Question 3 - Plotting Empirical PDF of fitted model
     go.Figure(
@@ -71,6 +74,7 @@ def test_multivariate_gaussian():
 
     print(f"{mvg.mu_}\n\n{mvg.cov_}")
 
+
     # Question 5 - Likelihood evaluation
     f1 = f3 = np.linspace(Q5_LOWER_BOUND, Q5_UPPER_BOUND, Q5_SPACES)
     q5_mu = np.array(np.meshgrid(f1, [0], f3, [0])).T.reshape(Q5_SPACES, Q5_SPACES, 4)
@@ -79,13 +83,16 @@ def test_multivariate_gaussian():
 
     go.Figure(go.Heatmap(x=f3, y=f1, z=likelihood),
               layout=go.Layout(title=LIKELIHOOD_PLOT_TITLE, xaxis_title=LIKELIHOOD_PLOT_XTITLE,
-                               yaxis_title=LIKELIHOOD_PLOT_YTITLE)).show()
+                               yaxis_title=LIKELIHOOD_PLOT_YTITLE, height=PLOT_HEIGHT, width=PLOT_WIDTH)).show()
+
 
     # Question 6 - Maximum likelihood
-    # raise NotImplementedError()
+    f1_index, f3_index = np.where(likelihood == np.amax(likelihood))
+    # would also probably work with np.argmax(likelihood, keepdims=True), but not supported in our version
+    print(np.around([f1[f1_index], f3[f3_index]], 3))
 
 
 if __name__ == '__main__':
     np.random.seed(0)
-    # test_univariate_gaussian()
+    test_univariate_gaussian()
     test_multivariate_gaussian()

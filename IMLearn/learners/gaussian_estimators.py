@@ -58,9 +58,9 @@ class UnivariateGaussian:
         self.mu_ = X.mean()  # the same for each state - we didn't see anything else.
 
         if not self.biased_:
-            self.var_ = X.var(ddof=1)  # TODO: is t the same var as /m-1?
+            self.var_ = X.var(ddof=1)
         else:
-            self.var_ = np.mean(np.power(X - self.mu_, 2))
+            self.var_ = X.var(ddof=0)
 
         self.fitted_ = True
         return self
