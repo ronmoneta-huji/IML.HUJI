@@ -42,7 +42,7 @@ def test_univariate_gaussian():
     X = np.random.normal(mu, var, m)
     uvg.fit(X)
 
-    print(uvg.mu_, uvg.var_)
+    print(f"(expectation, variance): {uvg.mu_},{uvg.var_}")
 
 
     # Question 2 - Empirically showing sample mean is consistent
@@ -72,7 +72,7 @@ def test_multivariate_gaussian():
     X = np.random.multivariate_normal(mu, cov, m)
     mvg.fit(X)
 
-    print(f"{mvg.mu_}\n\n{mvg.cov_}")
+    print(f"\nestimated expectation: \n{mvg.mu_}\n\n estimated covariance matrix: \n{mvg.cov_}")
 
 
     # Question 5 - Likelihood evaluation
@@ -89,7 +89,7 @@ def test_multivariate_gaussian():
     # Question 6 - Maximum likelihood
     f1_index, f3_index = np.where(likelihood == np.amax(likelihood))
     # would also probably work with np.argmax(likelihood, keepdims=True), but not supported in our version
-    print(np.around([f1[f1_index], f3[f3_index]], 3))
+    print(f"\nmodel that achieved the maximum log-likelihood value(f1,f3): \n{np.around([f1[f1_index], f3[f3_index]], 3)}")
 
 
 if __name__ == '__main__':
