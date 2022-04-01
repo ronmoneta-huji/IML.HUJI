@@ -12,6 +12,9 @@ pio.templates.default = "simple_white"
 
 FILE_PATH = r"../datasets/house_prices.csv"
 DATETIME_FORMAT = '%Y%m%dT%H%M%S'
+CORRELATION_PLOT_TITLE = r"Correlation between {0} and {1}, with Pearson correlation of {2}"
+CORRELATION_PLOT_HEIGHT = 1000
+CORRELATION_PLOT_WIDTH = 1000
 
 
 def remove_impossible_amount(data):
@@ -85,6 +88,18 @@ def load_data(filename: str):
     return data.drop(columns=["price"]), data["price"]
 
 
+def calc_correlation(x: pd.Series, y: pd.Series) -> float:
+    stand_dev_x = np.std(x)
+    stand_dev_y = np.std(y)
+    return x.cov(y) / (stand_dev_x * stand_dev_y)  # calculation covariance with series cov function
+
+
+def create_correlation_plot(x: pd.Series, y: pd.Series, cor: float):
+    return px.scatter(x=x, y=y, labels={'x': x.name, 'y': y.name},
+                      title=CORRELATION_PLOT_TITLE.format(x.name, y.name, cor),
+                      height=CORRELATION_PLOT_HEIGHT, width=CORRELATION_PLOT_WIDTH)
+
+
 def feature_evaluation(X: pd.DataFrame, y: pd.Series, output_path: str = ".") -> NoReturn:
     """
     Create scatter plot between each feature and the response.
@@ -102,7 +117,17 @@ def feature_evaluation(X: pd.DataFrame, y: pd.Series, output_path: str = ".") ->
     output_path: str (default ".")
         Path to folder in which plots are saved
     """
-    raise NotImplementedError()
+    features_to_plot = X.columns.tolist()
+    features_to_plot.remove('date')
+    features_to_plot.remove('yr_renovated')
+    features_to_plot.remove('yr_built')
+    features_to_plot = [feature for feature in features_to_plot if type(feature) == str]
+
+    for feature in features_to_plot:
+        x = X[feature]
+        cor = calc_correlation(x, y)
+        fig = create_correlation_plot(x, y, cor)
+        fig.write_image(fr"{output_path}\{feature}.png")
 
 
 if __name__ == '__main__':
@@ -111,10 +136,9 @@ if __name__ == '__main__':
     design_mat, response = load_data(FILE_PATH)
 
     # Question 2 - Feature evaluation with respect to response
-    raise NotImplementedError()
+    feature_evaluation(design_mat, response, r".\graphs")
 
     # Question 3 - Split samples into training- and testing sets.
-    raise NotImplementedError()
 
     # Question 4 - Fit model over increasing percentages of the overall training data
     # For every percentage p in 10%, 11%, ..., 100%, repeat the following 10 times:
@@ -123,4 +147,3 @@ if __name__ == '__main__':
     #   3) Test fitted model over test set
     #   4) Store average and variance of loss over test set
     # Then plot average loss as function of training size with error ribbon of size (mean-2*std, mean+2*std)
-    raise NotImplementedError()
