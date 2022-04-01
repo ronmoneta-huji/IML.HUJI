@@ -1,13 +1,69 @@
+from datetime import datetime
 from IMLearn.utils import split_train_test
 from IMLearn.learners.regressors import LinearRegression
-
 from typing import NoReturn
 import numpy as np
 import pandas as pd
 import plotly.graph_objects as go
 import plotly.express as px
 import plotly.io as pio
+
 pio.templates.default = "simple_white"
+
+FILE_PATH = r"../datasets/house_prices.csv"
+DATETIME_FORMAT = '%Y%m%dT%H%M%S'
+
+
+def remove_impossible_amount(data):
+    cols = data.columns.tolist()
+    cols.remove("long")
+    cols.remove("date")
+    ge_cols = ['bedrooms', 'waterfront', 'view', 'sqft_basement', 'yr_renovated']
+    for col in cols:
+        if col in ge_cols:
+            data = data[data[col] >= 0]
+        else:
+            data = data[data[col] > 0]
+
+    return data
+
+
+def remove_impossible_relation(data):
+    data = data[(data['yr_renovated'] > 0) & (data['yr_built'] < data['yr_renovated']) |
+                ((data['yr_renovated'] == 0) & (data['yr_built'] > data['yr_renovated']))]
+    data = data[data['sqft_lot'] >= data['sqft_living']]
+    return data
+
+
+def handle_categorical_vars(data):
+    # handle zip - to categorical
+    one_hot_zip = pd.get_dummies(data["zipcode"])
+    data = pd.concat([data, one_hot_zip], axis=1)
+    return data
+
+
+def derived_features(data):
+    # handle date -
+    data['date'] = pd.to_datetime(data['date'], format=DATETIME_FORMAT)
+    data['year'] = pd.DatetimeIndex(data['date']).year
+    data['month'] = pd.DatetimeIndex(data['date']).month
+    data['day'] = pd.DatetimeIndex(data['date']).day
+
+    # True building age
+    data['building_true_age'] = datetime.now().year - data["yr_built"]
+    # renovation flag
+    data['renovation_flag'] = np.where(data['yr_renovated'] > 0, 1, 0)
+
+    return data
+
+
+def preprocess_data(data: pd.DataFrame) -> pd.DataFrame:
+    data = remove_impossible_amount(data)
+    data = remove_impossible_relation(data)
+    data = handle_categorical_vars(data)
+    data = derived_features(data)
+
+    return data
 
 
 def load_data(filename: str):
@@ -23,7 +79,10 @@ def load_data(filename: str):
     Design matrix and response vector (prices) - either as a single
     DataFrame or a Tuple[DataFrame, Series]
     """
-    raise NotImplementedError()
+    data = pd.read_csv(filename).dropna().drop_duplicates()
+    data = preprocess_data(data)
+
+    return data.drop(columns=["price"]), data["price"]
 
 
 def feature_evaluation(X: pd.DataFrame, y: pd.Series, output_path: str = ".") -> NoReturn:
@@ -49,7 +108,7 @@ def feature_evaluation(X: pd.DataFrame, y: pd.Series, output_path: str = ".") ->
 if __name__ == '__main__':
     np.random.seed(0)
     # Question 1 - Load and preprocessing of housing prices dataset
-    raise NotImplementedError()
+    design_mat, response = load_data(FILE_PATH)
 
     # Question 2 - Feature evaluation with respect to response
     raise NotImplementedError()
