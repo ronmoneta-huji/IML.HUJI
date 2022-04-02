@@ -8,6 +8,7 @@ import plotly.graph_objects as go
 import plotly.express as px
 import plotly.io as pio
 
+pio.renderers.default = "browser"
 pio.templates.default = "simple_white"
 
 FILE_PATH = r"../datasets/house_prices.csv"
@@ -15,6 +16,12 @@ DATETIME_FORMAT = '%Y%m%dT%H%M%S'
 CORRELATION_PLOT_TITLE = r"Correlation between {0} and {1}, with Pearson correlation of {2}"
 CORRELATION_PLOT_HEIGHT = 1000
 CORRELATION_PLOT_WIDTH = 1000
+REPEAT = 10
+MEAN_LOSS_PLOT_TITLE = "Mean Loss as a function of percentile of training set"
+MEAN_LOSS_NAME = "Mean Loss over 10 repetitions"
+ERROR_RIBBON_NAME = "Confidence Interval of mean(loss)±2∗std(loss)"
+MEAN_LOSS_PLOT_X_TITLE = "Percentile of training Set"
+MEAN_LOSS_PLOT_Y_TITLE = "Mean Loss over test set"
 
 
 def remove_impossible_amount(data):
@@ -42,6 +49,7 @@ def handle_categorical_vars(data):
     # handle zip - to categorical
     one_hot_zip = pd.get_dummies(data["zipcode"])
     data = pd.concat([data, one_hot_zip], axis=1)
+    data = data.drop(columns=["zipcode"])
     return data
 
 
@@ -57,6 +65,7 @@ def derived_features(data):
     # renovation flag
     data['renovation_flag'] = np.where(data['yr_renovated'] > 0, 1, 0)
 
+    data = data.drop(columns=["date"])
     return data
 
 
@@ -130,13 +139,48 @@ def feature_evaluation(X: pd.DataFrame, y: pd.Series, output_path: str = ".") ->
         fig.write_image(fr"{output_path}\{feature}.png")
 
 
+def calc_avg_var_loss(X_train, y_train, X_test, y_test):
+    lin_model = LinearRegression()
+    avg_var_loss = np.empty((101 - 10, 2))
+    for p in range(10, 101):
+        loss = np.empty(REPEAT)
+        for i in range(REPEAT):
+            sample_X = X_train.sample(frac=(p / 100))
+            sample_y = y_train[sample_X.index]
+            lin_model.fit(sample_X.to_numpy(), sample_y.to_numpy())
+            loss[i] = lin_model.loss(X_test.to_numpy(), y_test.to_numpy())
+        avg_var_loss[p - REPEAT] = loss.mean(), loss.std()
+    return avg_var_loss
+
+
+def plot_avg_var_loss(mean, std):
+    go.Figure([go.Scatter(x=np.arange(10, 101),
+                          y=mean, mode="markers+lines",
+                          name=MEAN_LOSS_NAME,
+                          marker=dict(color="blue", opacity=.7)),
+               go.Scatter(x=np.arange(10, 101),
+                          y=mean - 2 * std,
+                          fill=None, mode="lines", name=ERROR_RIBBON_NAME,
+                          line=dict(color="lightgrey")
+                          , showlegend=True),
+               go.Scatter(x=np.arange(10, 101),
+                          y=mean + 2 * std,
+                          fill='tonexty',
+                          mode="lines",
+                          line=dict(color="lightgrey"),
+                          showlegend=False)],
+              layout=go.Layout(title_text=MEAN_LOSS_PLOT_TITLE,
+                               xaxis={"title": MEAN_LOSS_PLOT_X_TITLE},
+                               yaxis={"title": MEAN_LOSS_PLOT_Y_TITLE})).show()
+
+
 if __name__ == '__main__':
     np.random.seed(0)
     # Question 1 - Load and preprocessing of housing prices dataset
     design_mat, response = load_data(FILE_PATH)
 
     # Question 2 - Feature evaluation with respect to response
-    feature_evaluation(design_mat, response, r".\graphs")
+    # feature_evaluation(design_mat, response, r".\graphs")
 
     # Question 3 - Split samples into training- and testing sets.
     train_X, train_y, test_X, test_y = split_train_test(design_mat, response)
@@ -148,3 +192,7 @@ if __name__ == '__main__':
     #   3) Test fitted model over test set
     #   4) Store average and variance of loss over test set
     # Then plot average loss as function of training size with error ribbon of size (mean-2*std, mean+2*std)
+    loss_arr = calc_avg_var_loss(train_X, train_y, test_X, test_y)
+    mean_loss = loss_arr[:, 0]
+    std_loss = loss_arr[:, 1]
+    plot_avg_var_loss(mean_loss, std_loss)
