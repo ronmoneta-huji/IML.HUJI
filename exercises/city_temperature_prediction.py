@@ -56,6 +56,10 @@ if __name__ == '__main__':
            labels={'x': "Month", 'y': "Standard Deviation of Temp"}, title=ISRAEL_BAR_PLOT_TITLE).show()
 
     # Question 3 - Exploring differences between countries
+    countries_grouped_subset = data_mat.groupby(['Country', 'Month']).agg({'Temp': ['mean', 'std']})
+    px.line(x=countries_grouped_subset.index.get_level_values(1), y=countries_grouped_subset["Temp"]["mean"],
+            color=countries_grouped_subset.index.get_level_values(0), error_y=countries_grouped_subset["Temp"]["std"],
+            labels={'x': "Month", 'y': "Average Temperature"}, title=ISRAEL_BAR_PLOT_TITLE).show()
 
     # Question 4 - Fitting model for different values of `k`
 
