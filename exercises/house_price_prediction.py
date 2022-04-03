@@ -1,3 +1,4 @@
+import random
 from datetime import datetime
 from IMLearn.utils import split_train_test
 from IMLearn.learners.regressors import LinearRegression
@@ -30,17 +31,17 @@ def remove_impossible_amount(data):
     cols.remove("date")
     ge_cols = ['bedrooms', 'waterfront', 'view', 'sqft_basement', 'yr_renovated']
     for col in cols:
-        if col in ge_cols:
-            data = data[data[col] >= 0]
-        else:
-            data = data[data[col] > 0]
+        if not data[col].isna().any():
+            if col in ge_cols:
+                data = data[data[col] >= 0]
+            else:
+                data = data[data[col] > 0]
 
     return data
 
 
 def remove_impossible_relation(data):
-    data = data[(data['yr_renovated'] > 0) & (data['yr_built'] < data['yr_renovated']) |
-                ((data['yr_renovated'] == 0) & (data['yr_built'] > data['yr_renovated']))]
+    data = data[(data['yr_renovated'] > 0) & (data['yr_built'] < data['yr_renovated']) | (data['yr_renovated'] == 0)]
     data = data[data['sqft_lot'] >= data['sqft_living']]
     return data
 
@@ -49,7 +50,6 @@ def handle_categorical_vars(data):
     # handle zip - to categorical
     one_hot_zip = pd.get_dummies(data["zipcode"])
     data = pd.concat([data, one_hot_zip], axis=1)
-    data = data.drop(columns=["zipcode"])
     return data
 
 
@@ -64,16 +64,28 @@ def derived_features(data):
     data['building_true_age'] = datetime.now().year - data["yr_built"]
     # renovation flag
     data['renovation_flag'] = np.where(data['yr_renovated'] > 0, 1, 0)
+    return data
 
-    data = data.drop(columns=["date"])
+
+def fill_nas(data):
+    data['date'] = data['date'].fillna(random.choice(["20140101T000000", "20150101T000000"]))
+    data['yr_renovated'] = data['yr_renovated'].fillna(0)
+    data = data.fillna(data.mean())
+    return data
+
+
+def remove_cols(data):
+    data = data.drop(columns=["id", "date", "yr_built", "yr_renovated", "zipcode", 'lat', 'long'])
     return data
 
 
 def preprocess_data(data: pd.DataFrame) -> pd.DataFrame:
     data = remove_impossible_amount(data)
+    data = fill_nas(data)
     data = remove_impossible_relation(data)
     data = handle_categorical_vars(data)
     data = derived_features(data)
+    data = remove_cols(data)
 
     return data
 
@@ -91,7 +103,7 @@ def load_data(filename: str):
     Design matrix and response vector (prices) - either as a single
     DataFrame or a Tuple[DataFrame, Series]
     """
-    data = pd.read_csv(filename).dropna().drop_duplicates()
+    data = pd.read_csv(filename)
     data = preprocess_data(data)
 
     return data.drop(columns=["price"]), data["price"]
@@ -127,9 +139,6 @@ def feature_evaluation(X: pd.DataFrame, y: pd.Series, output_path: str = ".") ->
         Path to folder in which plots are saved
     """
     features_to_plot = X.columns.tolist()
-    features_to_plot.remove('date')
-    features_to_plot.remove('yr_renovated')
-    features_to_plot.remove('yr_built')
     features_to_plot = [feature for feature in features_to_plot if type(feature) == str]
 
     for feature in features_to_plot:

@@ -84,7 +84,7 @@ if __name__ == '__main__':
 
     # Question 5 - Evaluating fitted model on different countries
     DoY_design_mat = design_mat["DayOfYear"]
-    poly_model = PolynomialFitting(4)
+    poly_model = PolynomialFitting(5)
     poly_model.fit(DoY_design_mat, response)
     country_list = data_mat["Country"].unique()
     country_list = country_list[country_list != "Israel"]
