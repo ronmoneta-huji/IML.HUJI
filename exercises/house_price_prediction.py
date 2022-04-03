@@ -25,7 +25,7 @@ MEAN_LOSS_PLOT_X_TITLE = "Percentile of training Set"
 MEAN_LOSS_PLOT_Y_TITLE = "Mean Loss over test set"
 
 
-def remove_impossible_amount(data):
+def remove_impossible_amount(data: pd.DataFrame) -> pd.DataFrame:
     cols = data.columns.tolist()
     cols.remove("long")
     cols.remove("date")
@@ -40,20 +40,20 @@ def remove_impossible_amount(data):
     return data
 
 
-def remove_impossible_relation(data):
+def remove_impossible_relation(data: pd.DataFrame) -> pd.DataFrame:
     data = data[(data['yr_renovated'] > 0) & (data['yr_built'] < data['yr_renovated']) | (data['yr_renovated'] == 0)]
     data = data[data['sqft_lot'] >= data['sqft_living']]
     return data
 
 
-def handle_categorical_vars(data):
+def handle_categorical_vars(data: pd.DataFrame) -> pd.DataFrame:
     # handle zip - to categorical
     one_hot_zip = pd.get_dummies(data["zipcode"])
     data = pd.concat([data, one_hot_zip], axis=1)
     return data
 
 
-def derived_features(data):
+def derived_features(data: pd.DataFrame) -> pd.DataFrame:
     # handle date -
     data['date'] = pd.to_datetime(data['date'], format=DATETIME_FORMAT)
     data['year'] = pd.DatetimeIndex(data['date']).year
@@ -67,14 +67,14 @@ def derived_features(data):
     return data
 
 
-def fill_nas(data):
+def fill_nas(data: pd.DataFrame) -> pd.DataFrame:
     data['date'] = data['date'].fillna(random.choice(["20140101T000000", "20150101T000000"]))
     data['yr_renovated'] = data['yr_renovated'].fillna(0)
     data = data.fillna(data.mean())
     return data
 
 
-def remove_cols(data):
+def remove_cols(data: pd.DataFrame) -> pd.DataFrame:
     data = data.drop(columns=["id", "date", "yr_built", "yr_renovated", "zipcode", 'lat', 'long'])
     return data
 
@@ -148,7 +148,7 @@ def feature_evaluation(X: pd.DataFrame, y: pd.Series, output_path: str = ".") ->
         fig.write_image(fr"{output_path}\{feature}.png")
 
 
-def calc_avg_var_loss(X_train, y_train, X_test, y_test):
+def calc_avg_var_loss(X_train: pd.DataFrame, y_train: pd.Series, X_test: pd.DataFrame, y_test: pd.Series) -> np.ndarray:
     lin_model = LinearRegression()
     avg_var_loss = np.empty((101 - 10, 2))
     for p in range(10, 101):
@@ -162,7 +162,7 @@ def calc_avg_var_loss(X_train, y_train, X_test, y_test):
     return avg_var_loss
 
 
-def plot_avg_var_loss(mean, std):
+def plot_avg_var_loss(mean: np.ndarray, std: np.ndarray):
     go.Figure([go.Scatter(x=np.arange(10, 101),
                           y=mean, mode="markers+lines",
                           name=MEAN_LOSS_NAME,
