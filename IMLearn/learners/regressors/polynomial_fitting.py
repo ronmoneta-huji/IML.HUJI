@@ -21,6 +21,7 @@ class PolynomialFitting(LinearRegression):
         """
         super().__init__()
         self.k = k
+        self.linear_regressor = LinearRegression(False)
 
     def _fit(self, X: np.ndarray, y: np.ndarray) -> NoReturn:
         """
@@ -35,7 +36,7 @@ class PolynomialFitting(LinearRegression):
             Responses of input data to fit to
         """
         X = self.__transform(X)
-        super()._fit(X, y)
+        self.linear_regressor.fit(X, y)
 
     def _predict(self, X: np.ndarray) -> np.ndarray:
         """
@@ -52,7 +53,7 @@ class PolynomialFitting(LinearRegression):
             Predicted responses of given samples
         """
         X = self.__transform(X)
-        return super()._predict(X)
+        return self.linear_regressor.predict(X)
 
     def _loss(self, X: np.ndarray, y: np.ndarray) -> float:
         """
@@ -71,7 +72,8 @@ class PolynomialFitting(LinearRegression):
         loss : float
             Performance under MSE loss function
         """
-        return super()._loss(X, y)
+        X = self.__transform(X)
+        return self.linear_regressor.loss(X, y)
 
     def __transform(self, X: np.ndarray) -> np.ndarray:
         """
