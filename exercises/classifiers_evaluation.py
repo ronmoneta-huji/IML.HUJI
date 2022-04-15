@@ -5,6 +5,12 @@ import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 from math import atan2, pi
 
+pio.renderers.default = "browser"
+
+LOSS_PLOT_X = "Iteration number"
+LOSS_PLOT_Y = "Loss"
+LOSS_PLOT_TITLE = "Loss as function of fitting iteration in {0} data"
+
 
 def load_dataset(filename: str) -> Tuple[np.ndarray, np.ndarray]:
     """
@@ -36,16 +42,17 @@ def run_perceptron():
     Create a line plot that shows the perceptron algorithm's training loss values (y-axis)
     as a function of the training iterations (x-axis).
     """
-    for n, f in [("Linearly Separable", "linearly_separable.npy"), ("Linearly Inseparable", "linearly_inseparable.npy")]:
+    for n, f in [("Linearly Separable", "linearly_separable.npy"),
+                 ("Linearly Inseparable", "linearly_inseparable.npy")]:
         # Load dataset
-        raise NotImplementedError()
+        X, y = load_dataset(f'../datasets/{f}')
 
         # Fit Perceptron and record loss in each fit iteration
         losses = []
-        raise NotImplementedError()
-
+        Perceptron(callback=lambda fit, a, b: losses.append(fit.loss(X, y))).fit(X, y)
         # Plot figure of loss as function of fitting iteration
-        raise NotImplementedError()
+        px.line(x=np.arange(len(losses)), y=losses, labels={'x': LOSS_PLOT_X, 'y': LOSS_PLOT_Y},
+                title=LOSS_PLOT_TITLE.format(n)).show()
 
 
 def get_ellipse(mu: np.ndarray, cov: np.ndarray):
@@ -103,4 +110,4 @@ def compare_gaussian_classifiers():
 if __name__ == '__main__':
     np.random.seed(0)
     run_perceptron()
-    compare_gaussian_classifiers()
+    # compare_gaussian_classifiers()
