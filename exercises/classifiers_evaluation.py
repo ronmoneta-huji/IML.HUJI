@@ -89,6 +89,7 @@ def compare_gaussian_classifiers():
     for f in ["gaussian1.npy", "gaussian2.npy"]:
         # Load dataset
         X, y = load_dataset(f'../datasets/{f}')
+
         # Fit models and predict over training set
         lda_model = LDA().fit(X, y)
         gnb_model = GaussianNaiveBayes().fit(X, y)
@@ -105,12 +106,10 @@ def compare_gaussian_classifiers():
                             subplot_titles=[rf"{models_titles[i]} Classifier, accuracy: {accuracy(y, m.predict(X))}" for
                                             i, m in enumerate(models)],
                             horizontal_spacing=0.01, vertical_spacing=.03)
-        # lims = np.array([X.min(axis=0), X.max(axis=0)]).T + np.array([-.4, .4])
         symbols = np.array(["circle", "diamond", "star"])
 
         for i, m in enumerate(models):
             fig.add_traces([
-                # decision_surface(m.predict, lims[0], lims[1], showscale=False),
                 go.Scatter(x=X[:, 0], y=X[:, 1], mode="markers", showlegend=False,
                            marker=dict(color=m.predict(X), symbol=symbols[y],
                                        colorscale=[custom[0], custom[4], custom[-1]],
@@ -133,5 +132,5 @@ def compare_gaussian_classifiers():
 
 if __name__ == '__main__':
     np.random.seed(0)
-    # run_perceptron()
+    run_perceptron()
     compare_gaussian_classifiers()
