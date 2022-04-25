@@ -88,12 +88,12 @@ class LDA(BaseEstimator):
         if not self.fitted_:
             raise ValueError("Estimator must first be fitted before calling `likelihood` function")
 
-        likelihoods = np.zeros((X.shape[0], self.classes_.shape[0])).T
+        likelihoods = np.zeros((X.shape[0], self.classes_.shape[0]))
         for k in range(self.classes_.shape[0]):
-            likelihoods[k] = np.log(self.pi_[k]) + np.dot(np.dot(X, self._cov_inv), self.mu_[k]) - 0.5 * np.dot(
+            likelihoods[:, k] = np.log(self.pi_[k]) + np.dot(np.dot(X, self._cov_inv), self.mu_[k]) - 0.5 * np.dot(
                 np.dot(self._cov_inv, self.mu_[k].T), self.mu_[k])
 
-        return likelihoods.T
+        return likelihoods
 
     def _loss(self, X: np.ndarray, y: np.ndarray) -> float:
         """

@@ -76,14 +76,15 @@ class Perceptron(BaseEstimator):
         """
 
         if self.include_intercept_:
-            X = np.insert(X, 0, 1, axis=1)  # TODO: do i need to insert the ones to the right or left?
+            X = np.insert(X, 0, 1, axis=1)
 
         self.coefs_ = np.zeros(X.shape[1])
         t = 1
         while np.any(y * np.inner(self.coefs_, X) <= 0) and t < self.max_iter_:
             first_index = np.where(y * np.inner(self.coefs_, X) <= 0)[0][0]
             self.coefs_ += y[first_index] * X[first_index]
-            self.fitted_ = True  # TODO: each time?
+            if not self.fitted_:
+                self.fitted_ = True
             self.callback_(self, X[first_index], y[first_index])
             t += 1
 
@@ -102,7 +103,7 @@ class Perceptron(BaseEstimator):
             Predicted responses of given samples
         """
         if self.include_intercept_:
-            X = np.insert(X, 0, 1, axis=1)  # TODO: do i need to insert the ones to the right or left?
+            X = np.insert(X, 0, 1, axis=1)
 
         return np.sign(np.inner(self.coefs_, X))
 
@@ -124,4 +125,4 @@ class Perceptron(BaseEstimator):
             Performance under missclassification loss function
         """
         from ...metrics import misclassification_error
-        return misclassification_error(y, self._predict(X))  # TODO: I need to not normalize?
+        return misclassification_error(y, self._predict(X))
