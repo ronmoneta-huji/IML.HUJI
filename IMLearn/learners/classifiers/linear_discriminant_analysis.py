@@ -50,7 +50,7 @@ class LDA(BaseEstimator):
         self.classes_ = np.unique(y)
         self.mu_ = np.array([X[y == label].mean(axis=0) for label in self.classes_])
         self.cov_ = np.sum([(X[y == label] - self.mu_[i, :]).T @ (X[y == label] - self.mu_[i, :]) for i, label in
-                            enumerate(self.classes_)], axis=0) / y.size
+                            enumerate(self.classes_)], axis=0) / (X.shape[0] - self.classes_.shape[0])
         self._cov_inv = inv(self.cov_)
         self.pi_ = [(y == label).mean() for label in self.classes_]
 
