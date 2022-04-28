@@ -86,7 +86,8 @@ class GaussianNaiveBayes(BaseEstimator):
             for k in range(self.classes_.shape[0]):
                 under = 2 * self.vars_[k]
                 upper = np.power((sample - self.mu_[k]), 2)
-                likelihoods[i][k] = np.log(self.pi_[k]) - np.sum(upper / under)
+                likelihoods[i][k] = np.log(self.pi_[k]) - np.sum(
+                    (upper / under) + 0.5 * np.log(2 * np.pi * self.vars_[k]))
 
         return likelihoods
 
