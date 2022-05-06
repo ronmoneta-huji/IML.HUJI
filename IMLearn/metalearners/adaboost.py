@@ -51,8 +51,8 @@ class AdaBoost(BaseEstimator):
             Responses of input data to fit to
         """
         m = X.shape[0]
-        self.models_ = np.zeros(shape=self.iterations_)
-        self.weights_ = np.zeros(shape=self.iterations_)
+        self.models_ = [None] * self.iterations_
+        self.weights_ = np.zeros(self.iterations_)
         self.D_ = np.ones(m) / m
 
         for t in range(self.iterations_):

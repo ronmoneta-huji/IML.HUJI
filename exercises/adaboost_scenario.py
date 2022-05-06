@@ -1,10 +1,12 @@
 import numpy as np
 from typing import Tuple
-from IMLearn.learners.metalearners.adaboost import AdaBoost
+from IMLearn.metalearners.adaboost import AdaBoost
 from IMLearn.learners.classifiers import DecisionStump
 from utils import *
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
+
+pio.renderers.default = "browser"
 
 
 def generate_data(n: int, noise_ratio: float) -> Tuple[np.ndarray, np.ndarray]:
@@ -42,20 +44,29 @@ def fit_and_evaluate_adaboost(noise, n_learners=250, train_size=5000, test_size=
     (train_X, train_y), (test_X, test_y) = generate_data(train_size, noise), generate_data(test_size, noise)
 
     # Question 1: Train- and test errors of AdaBoost in noiseless case
-    raise NotImplementedError()
+    ada_ensemble = AdaBoost(DecisionStump, n_learners)
+    ada_ensemble.fit(train_X, train_y)
+
+    plot_train_y = list(map(lambda n: ada_ensemble.partial_loss(train_X, train_y, n), list(range(1, n_learners + 1))))
+    plot_test_y = list(map(lambda n: ada_ensemble.partial_loss(test_X, test_y, n), list(range(1, n_learners + 1))))
+
+    go.Figure([
+        go.Scatter(x=list(range(1, n_learners + 1)), y=plot_train_y, mode="lines + markers",
+                   name="Training data"),
+        go.Scatter(x=list(range(1, n_learners + 1)), y=plot_test_y, mode="lines + markers",
+                   name="Test data")
+    ], layout=go.layout(title="Training and Test errors as a function of the number of fitted learners",
+                        xaxis_title="Number of fitted learners", yaxis_title="Prediction Error")).show()
 
     # Question 2: Plotting decision surfaces
     T = [5, 50, 100, 250]
     lims = np.array([np.r_[train_X, test_X].min(axis=0), np.r_[train_X, test_X].max(axis=0)]).T + np.array([-.1, .1])
-    raise NotImplementedError()
 
     # Question 3: Decision surface of best performing ensemble
-    raise NotImplementedError()
 
     # Question 4: Decision surface with weighted samples
-    raise NotImplementedError()
 
 
 if __name__ == '__main__':
     np.random.seed(0)
-    raise NotImplementedError()
+    fit_and_evaluate_adaboost(0)

@@ -44,7 +44,7 @@ class DecisionStump(BaseEstimator):
         """
 
         threshold, mse, j = 0, 2, 0
-        for sign, j in product([-1, 1], X.shape[1]):
+        for sign, j in product([-1, 1], range(X.shape[1])):
             t, err = self._find_threshold(X[:, j], y, sign)
             if err <= mse:
                 self.threshold_, self.j_, self.sign_, mse = t, j, sign, err
