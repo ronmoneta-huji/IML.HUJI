@@ -60,7 +60,7 @@ class AdaBoost(BaseEstimator):
             self.models_[t] = h_t
             prediction = h_t.predict(X)
             epsilon_t = np.sum(self.D_ * (prediction != y))
-            self.weights_[t] = 0.5 * np.log(1 / epsilon_t - 1)
+            self.weights_[t] = 0.5 * np.log((1 / epsilon_t) - 1)
             self.D_ *= np.exp(-y * (self.weights_[t] * prediction))
             self.D_ /= np.sum(self.D_)
 

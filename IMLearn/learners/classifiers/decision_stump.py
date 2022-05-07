@@ -113,7 +113,7 @@ class DecisionStump(BaseEstimator):
         mse = 2
         for i, t in enumerate(values):
             err = np.sum(np.abs(labels) * (np.sign(labels) != pred_signs))
-            threshold, mse = (t, err) if err <= mse else (threshold, mse)
+            threshold, mse = (t, err) if err < mse else (threshold, mse)
             pred_signs[i] = -sign
 
         return threshold, mse
