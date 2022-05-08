@@ -48,14 +48,14 @@ def fit_and_evaluate_adaboost(noise, n_learners=250, train_size=5000, test_size=
     ada_ensemble = AdaBoost(DecisionStump, n_learners)
     ada_ensemble.fit(train_X, train_y)
 
-    plot_train_y = list(map(lambda l: ada_ensemble.partial_loss(train_X, train_y, l), list(range(1, n_learners + 1))))
-    plot_test_y = list(map(lambda l: ada_ensemble.partial_loss(test_X, test_y, l), list(range(1, n_learners + 1))))
-
+    fitted_learners = np.arange(1, n_learners)
+    training_loss, test_loss = [], []
+    for t in fitted_learners:
+        training_loss.append(ada_ensemble.partial_loss(train_X, train_y, t))
+        test_loss.append(ada_ensemble.partial_loss(test_X, test_y, t))
     go.Figure([
-        go.Scatter(x=list(range(1, n_learners + 1)), y=plot_train_y, mode="lines + markers",
-                   name="Training data"),
-        go.Scatter(x=list(range(1, n_learners + 1)), y=plot_test_y, mode="lines + markers",
-                   name="Test data")
+        go.Scatter(x=fitted_learners, y=training_loss, mode="lines + markers", name="Training data"),
+        go.Scatter(x=fitted_learners, y=test_loss, mode="lines + markers", name="Test data")
     ], layout=go.Layout(
         title=f"Training and Test errors as a function of the number of fitted learners with noise: {noise}",
         xaxis_title="Number of fitted learners", yaxis_title="Prediction Error")).show()
@@ -81,7 +81,7 @@ def fit_and_evaluate_adaboost(noise, n_learners=250, train_size=5000, test_size=
 
     # Question 3: Decision surface of best performing ensemble
     test_error = []
-    for num in range(1, n_learners):
+    for num in fitted_learners:
         test_error.append(ada_ensemble.partial_loss(test_X, test_y, num))
     best_ensemble = np.argmin(np.array(test_error)) + 1
 

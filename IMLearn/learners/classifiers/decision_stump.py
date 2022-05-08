@@ -43,11 +43,12 @@ class DecisionStump(BaseEstimator):
             Responses of input data to fit to
         """
 
-        threshold, mse, j = 0, 2, 0
+        mse = 2
         for sign, j in product([-1, 1], range(X.shape[1])):
             t, err = self._find_threshold(X[:, j], y, sign)
-            if err <= mse:
+            if err < mse:
                 self.threshold_, self.j_, self.sign_, mse = t, j, sign, err
+                mse = err
 
     def _predict(self, X: np.ndarray) -> np.ndarray:
         """
@@ -107,16 +108,13 @@ class DecisionStump(BaseEstimator):
         pred_signs.fill(sign)
         indexes = np.argsort(values)
         values = values[indexes]
+        values = np.concatenate([[-np.inf], (values[1:] + values[:-1]) / 2, [np.inf]])
         labels = labels[indexes]
 
-        threshold = values[0]
-        mse = 2
-        for i, t in enumerate(values):
-            err = np.sum(np.abs(labels) * (np.sign(labels) != pred_signs))
-            threshold, mse = (t, err) if err < mse else (threshold, mse)
-            pred_signs[i] = -sign
-
-        return threshold, mse
+        min_err = np.sum(np.abs(labels[np.sign(labels) == sign]))
+        threshold_errs = np.append(min_err, min_err - np.cumsum(labels * sign))
+        min_loss_index = np.argmin(threshold_errs)
+        return values[min_loss_index], threshold_errs[min_loss_index]
 
     def _loss(self, X: np.ndarray, y: np.ndarray) -> float:
         """
