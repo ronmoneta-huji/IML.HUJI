@@ -34,7 +34,8 @@ def select_polynomial_degree(n_samples: int = 100, noise: float = 5):
     y_noiseless = (X + 3) * (X + 2) * (X + 1) * (X - 1) * (X - 2)
     y = y_noiseless + eps
     train_X, train_y, test_X, test_y = split_train_test(pd.DataFrame(X), pd.Series(y), 2 / 3)
-    train_X, test_X = train_X.iloc[:, 0], test_X.iloc[:, 0]
+    train_X, test_X = train_X.iloc[:, 0].to_numpy(), test_X.iloc[:, 0].to_numpy()
+    train_y, test_y = train_y.to_numpy(), test_y.to_numpy()
     go.Figure([
         go.Scatter(x=X, y=y_noiseless, mode="lines", name="True (noiseless)"),
         go.Scatter(x=train_X, y=train_y, mode="markers", name="Train", marker=dict(color='orange')),
@@ -47,8 +48,7 @@ def select_polynomial_degree(n_samples: int = 100, noise: float = 5):
     train_losses, validation_losses = np.zeros(11), np.zeros(11)
     for k in range(11):
         poly_estimator = PolynomialFitting(k)
-        train_losses[k], validation_losses[k] = cross_validate(poly_estimator, train_X.to_numpy(), train_y.to_numpy(),
-                                                               mean_square_error)
+        train_losses[k], validation_losses[k] = cross_validate(poly_estimator, train_X, train_y, mean_square_error)
     go.Figure([
         go.Scatter(x=[k for k in range(11)], y=train_losses, mode="markers + lines", name="Train Errors"),
         go.Scatter(x=[k for k in range(11)], y=validation_losses, mode="markers + lines", name="Validation Errors"),
@@ -56,7 +56,10 @@ def select_polynomial_degree(n_samples: int = 100, noise: float = 5):
                         xaxis={"title": "k"},
                         yaxis={"title": "Average Error"})).show()
     # Question 3 - Using best value of k, fit a k-degree polynomial model and report test error
-    # raise NotImplementedError()
+    best_k = np.argmin(validation_losses)
+    poly_estimator = PolynomialFitting(best_k)
+    poly_estimator.fit(train_X, train_y)
+    print(f"k^*: {best_k}, test error: {np.round(poly_estimator.loss(test_X, test_y), 2)}")
 
 
 def select_regularization_parameter(n_samples: int = 50, n_evaluations: int = 500):
