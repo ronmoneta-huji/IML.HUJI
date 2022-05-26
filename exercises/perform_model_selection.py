@@ -34,17 +34,27 @@ def select_polynomial_degree(n_samples: int = 100, noise: float = 5):
     y_noiseless = (X + 3) * (X + 2) * (X + 1) * (X - 1) * (X - 2)
     y = y_noiseless + eps
     train_X, train_y, test_X, test_y = split_train_test(pd.DataFrame(X), pd.Series(y), 2 / 3)
+    train_X, test_X = train_X.iloc[:, 0], test_X.iloc[:, 0]
     go.Figure([
         go.Scatter(x=X, y=y_noiseless, mode="lines", name="True (noiseless)"),
-        go.Scatter(x=train_X.iloc[:, 0], y=train_y, mode="markers", name="Train", marker=dict(color='orange')),
-        go.Scatter(x=test_X.iloc[:, 0], y=test_y, mode="markers", name="Test", marker=dict(color='green'))
+        go.Scatter(x=train_X, y=train_y, mode="markers", name="Train", marker=dict(color='orange')),
+        go.Scatter(x=test_X, y=test_y, mode="markers", name="Test", marker=dict(color='green'))
     ], layout=go.Layout(title_text="True model and the train/test sets of f(x)",
                         xaxis={"title": "x"},
                         yaxis={"title": "f(x)"})).show()
 
     # Question 2 - Perform CV for polynomial fitting with degrees 0,1,...,10
-    # raise NotImplementedError()
-
+    train_losses, validation_losses = np.zeros(11), np.zeros(11)
+    for k in range(11):
+        poly_estimator = PolynomialFitting(k)
+        train_losses[k], validation_losses[k] = cross_validate(poly_estimator, train_X.to_numpy(), train_y.to_numpy(),
+                                                               mean_square_error)
+    go.Figure([
+        go.Scatter(x=[k for k in range(11)], y=train_losses, mode="markers + lines", name="Train Errors"),
+        go.Scatter(x=[k for k in range(11)], y=validation_losses, mode="markers + lines", name="Validation Errors"),
+    ], layout=go.Layout(title_text="Average training and validation errors as a function of k",
+                        xaxis={"title": "k"},
+                        yaxis={"title": "Average Error"})).show()
     # Question 3 - Using best value of k, fit a k-degree polynomial model and report test error
     # raise NotImplementedError()
 
