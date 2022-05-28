@@ -2,6 +2,7 @@ from __future__ import annotations
 from copy import deepcopy
 from typing import Tuple, Callable
 import numpy as np
+
 from IMLearn import BaseEstimator
 
 
@@ -42,11 +43,11 @@ def cross_validate(estimator: BaseEstimator, X: np.ndarray, y: np.ndarray,
     folds = np.array_split(X, cv)
     labels = np.array_split(y, cv)
 
-    for i in range(cv):
-        sample = np.concatenate(np.delete(folds, i))
-        label = np.concatenate(np.delete(labels, i))
+    for k in range(cv):
+        sample = np.concatenate(np.delete(folds, k, 0))
+        label = np.concatenate(np.delete(labels, k, 0))
         model = estimator.fit(sample, label)
-        train_losses[i] = scoring(label, model.predict(sample))
-        validation_losses[i] = scoring(labels[i], model.predict(folds[i]))
+        train_losses[k] = scoring(label, model.predict(sample))
+        validation_losses[k] = scoring(labels[k], model.predict(folds[k]))
 
     return train_losses.mean(), validation_losses.mean()

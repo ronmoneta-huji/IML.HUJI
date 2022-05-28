@@ -40,9 +40,10 @@ def select_polynomial_degree(n_samples: int = 100, noise: float = 5):
         go.Scatter(x=X, y=y_noiseless, mode="lines", name="True (noiseless)"),
         go.Scatter(x=train_X, y=train_y, mode="markers", name="Train", marker=dict(color='orange')),
         go.Scatter(x=test_X, y=test_y, mode="markers", name="Test", marker=dict(color='green'))
-    ], layout=go.Layout(title_text="True model and the train/test sets of f(x)",
-                        xaxis={"title": "x"},
-                        yaxis={"title": "f(x)"})).show()
+    ], layout=go.Layout(
+        title_text=f"True model and the train/test sets of f(x) for {n_samples} samples with noise of: {noise}",
+        xaxis={"title": "x"},
+        yaxis={"title": "f(x)"})).show()
 
     # Question 2 - Perform CV for polynomial fitting with degrees 0,1,...,10
     train_losses, validation_losses = np.zeros(11), np.zeros(11)
@@ -52,14 +53,17 @@ def select_polynomial_degree(n_samples: int = 100, noise: float = 5):
     go.Figure([
         go.Scatter(x=[k for k in range(11)], y=train_losses, mode="markers + lines", name="Train Errors"),
         go.Scatter(x=[k for k in range(11)], y=validation_losses, mode="markers + lines", name="Validation Errors"),
-    ], layout=go.Layout(title_text="Average training and validation errors as a function of k",
-                        xaxis={"title": "k"},
-                        yaxis={"title": "Average Error"})).show()
+    ], layout=go.Layout(
+        title_text=f"Average training and validation errors as a function of k for {n_samples} samples with noise of:"
+                   f" {noise}",
+        xaxis={"title": "k"},
+        yaxis={"title": "Average Error"})).show()
     # Question 3 - Using best value of k, fit a k-degree polynomial model and report test error
     best_k = np.argmin(validation_losses)
     poly_estimator = PolynomialFitting(best_k)
     poly_estimator.fit(train_X, train_y)
-    print(f"k^*: {best_k}, test error: {np.round(poly_estimator.loss(test_X, test_y), 2)}")
+    print(f"k^*: {best_k}, test error: {np.round(poly_estimator.loss(test_X, test_y), 2)} for {n_samples}"
+          f" samples with noise of: {noise}")
 
 
 def select_regularization_parameter(n_samples: int = 50, n_evaluations: int = 500):
@@ -88,3 +92,5 @@ def select_regularization_parameter(n_samples: int = 50, n_evaluations: int = 50
 if __name__ == '__main__':
     np.random.seed(0)
     select_polynomial_degree()
+    select_polynomial_degree(noise=0)
+    select_polynomial_degree(n_samples=1500, noise=10)
