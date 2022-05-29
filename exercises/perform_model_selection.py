@@ -80,13 +80,57 @@ def select_regularization_parameter(n_samples: int = 50, n_evaluations: int = 50
         Number of regularization parameter values to evaluate for each of the algorithms
     """
     # Question 6 - Load diabetes dataset and split into training and testing portions
-    raise NotImplementedError()
+    X, y = datasets.load_diabetes(return_X_y=True)
+    train_X, train_y, test_X, test_y = split_train_test(pd.DataFrame(X), pd.Series(y), 50 / X.data.shape[0])
+    train_X, train_y, test_X, test_y = train_X.to_numpy(), train_y.to_numpy(), test_X.to_numpy(), test_y.to_numpy()
 
     # Question 7 - Perform CV for different values of the regularization parameter for Ridge and Lasso regressions
-    raise NotImplementedError()
+    reg_range = np.linspace(0, 5, n_evaluations)
+    ridge_losses = []
+    lasso_losses = []
+
+    for lam in reg_range:
+        ridge = RidgeRegression(lam)
+        lasso = Lasso(lam)
+        ridge_losses.append(cross_validate(ridge, train_X, train_y, mean_square_error))
+        lasso_losses.append(cross_validate(lasso, train_X, train_y, mean_square_error))
+
+    ridge_train_losses, ridge_validation_losses = zip(*ridge_losses)
+    lasso_train_losses, lasso_validation_losses = zip(*lasso_losses)
+
+    go.Figure([
+        go.Scatter(x=reg_range, y=ridge_train_losses, mode="markers + lines", name="Train Errors"),
+        go.Scatter(x=reg_range, y=ridge_validation_losses, mode="markers + lines", name="Validation Errors"),
+    ], layout=go.Layout(
+        title_text=f"Ridge - Average training and validation errors as a function of  the tested regularization parameter",
+        xaxis={"title": "Lambda - tested regularization parameter"},
+        yaxis={"title": "Average Error"})).show()
+
+    go.Figure([
+        go.Scatter(x=reg_range, y=lasso_train_losses, mode="markers + lines", name="Train Errors"),
+        go.Scatter(x=reg_range, y=lasso_validation_losses, mode="markers + lines", name="Validation Errors"),
+    ], layout=go.Layout(
+        title_text=f"Lasso - Average training and validation errors as a function of  the tested regularization parameter",
+        xaxis={"title": "Lambda - tested regularization parameter"},
+        yaxis={"title": "Average Error"})).show()
 
     # Question 8 - Compare best Ridge model, best Lasso model and Least Squares model
-    raise NotImplementedError()
+    ridge_best_reg = reg_range[np.argmin(ridge_validation_losses)]
+    lasso_best_reg = reg_range[np.argmin(lasso_validation_losses)]
+    print(f"Best regularization parameter for ridge: {ridge_best_reg}. "
+          f"Best regularization parameter for lasso: {lasso_best_reg}.")
+
+    ridge_estimator = RidgeRegression(ridge_best_reg)
+    ridge_estimator.fit(train_X, train_y)
+    print(f"Test error for ridge: {ridge_estimator.loss(test_X, test_y)}")
+
+    lasso_estimator = Lasso(lasso_best_reg)
+    lasso_estimator.fit(train_X, train_y)
+    print(f"Test error for lasso: {mean_square_error(test_y, lasso_estimator.predict(test_X))}")
+
+    linear_estimator = LinearRegression()
+    linear_estimator.fit(train_X, train_y)
+    print(f"Test error for linear regression: {linear_estimator.loss(test_X, test_y)}")
 
 
 if __name__ == '__main__':
@@ -94,3 +138,4 @@ if __name__ == '__main__':
     select_polynomial_degree()
     select_polynomial_degree(noise=0)
     select_polynomial_degree(n_samples=1500, noise=10)
+    select_regularization_parameter()
