@@ -33,11 +33,13 @@ def select_polynomial_degree(n_samples: int = 100, noise: float = 5):
     eps = np.random.normal(0, noise, n_samples)
     y_noiseless = (X + 3) * (X + 2) * (X + 1) * (X - 1) * (X - 2)
     y = y_noiseless + eps
+
     train_X, train_y, test_X, test_y = split_train_test(pd.DataFrame(X), pd.Series(y), 2 / 3)
     train_X, test_X = train_X.iloc[:, 0].to_numpy(), test_X.iloc[:, 0].to_numpy()
     train_y, test_y = train_y.to_numpy(), test_y.to_numpy()
+
     go.Figure([
-        go.Scatter(x=X, y=y_noiseless, mode="lines", name="True (noiseless)"),
+        go.Scatter(x=X, y=y_noiseless, mode="markers", name="True (noiseless)"),
         go.Scatter(x=train_X, y=train_y, mode="markers", name="Train", marker=dict(color='orange')),
         go.Scatter(x=test_X, y=test_y, mode="markers", name="Test", marker=dict(color='green'))
     ], layout=go.Layout(
@@ -50,6 +52,7 @@ def select_polynomial_degree(n_samples: int = 100, noise: float = 5):
     for k in range(11):
         poly_estimator = PolynomialFitting(k)
         train_losses[k], validation_losses[k] = cross_validate(poly_estimator, train_X, train_y, mean_square_error)
+
     go.Figure([
         go.Scatter(x=[k for k in range(11)], y=train_losses, mode="markers + lines", name="Train Errors"),
         go.Scatter(x=[k for k in range(11)], y=validation_losses, mode="markers + lines", name="Validation Errors"),
@@ -58,6 +61,7 @@ def select_polynomial_degree(n_samples: int = 100, noise: float = 5):
                    f" {noise}",
         xaxis={"title": "k"},
         yaxis={"title": "Average Error"})).show()
+
     # Question 3 - Using best value of k, fit a k-degree polynomial model and report test error
     best_k = np.argmin(validation_losses)
     poly_estimator = PolynomialFitting(best_k)
@@ -81,11 +85,11 @@ def select_regularization_parameter(n_samples: int = 50, n_evaluations: int = 50
     """
     # Question 6 - Load diabetes dataset and split into training and testing portions
     X, y = datasets.load_diabetes(return_X_y=True)
-    train_X, train_y, test_X, test_y = split_train_test(pd.DataFrame(X), pd.Series(y), 50 / X.data.shape[0])
-    train_X, train_y, test_X, test_y = train_X.to_numpy(), train_y.to_numpy(), test_X.to_numpy(), test_y.to_numpy()
+    train_X, train_y = X[:n_samples, :], y[:n_samples]
+    test_X, test_y = X[n_samples:, :], y[n_samples:]
 
     # Question 7 - Perform CV for different values of the regularization parameter for Ridge and Lasso regressions
-    reg_range = np.linspace(0, 5, n_evaluations)
+    reg_range = np.linspace(0, 3, n_evaluations)
     ridge_losses = []
     lasso_losses = []
 
@@ -117,20 +121,20 @@ def select_regularization_parameter(n_samples: int = 50, n_evaluations: int = 50
     # Question 8 - Compare best Ridge model, best Lasso model and Least Squares model
     ridge_best_reg = reg_range[np.argmin(ridge_validation_losses)]
     lasso_best_reg = reg_range[np.argmin(lasso_validation_losses)]
-    print(f"Best regularization parameter for ridge: {ridge_best_reg}. "
-          f"Best regularization parameter for lasso: {lasso_best_reg}.")
+    print(f"Best regularization parameter for Ridge: {ridge_best_reg}. "
+          f"Best regularization parameter for Lasso: {lasso_best_reg}.")
 
     ridge_estimator = RidgeRegression(ridge_best_reg)
     ridge_estimator.fit(train_X, train_y)
-    print(f"Test error for ridge: {ridge_estimator.loss(test_X, test_y)}")
+    print(f"Test error for Ridge: {ridge_estimator.loss(test_X, test_y)}")
 
     lasso_estimator = Lasso(lasso_best_reg)
     lasso_estimator.fit(train_X, train_y)
-    print(f"Test error for lasso: {mean_square_error(test_y, lasso_estimator.predict(test_X))}")
+    print(f"Test error for Lasso: {mean_square_error(test_y, lasso_estimator.predict(test_X))}")
 
     linear_estimator = LinearRegression()
     linear_estimator.fit(train_X, train_y)
-    print(f"Test error for linear regression: {linear_estimator.loss(test_X, test_y)}")
+    print(f"Test error for Least Squares: {linear_estimator.loss(test_X, test_y)}")
 
 
 if __name__ == '__main__':
