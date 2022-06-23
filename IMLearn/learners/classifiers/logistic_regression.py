@@ -93,12 +93,10 @@ class LogisticRegression(BaseEstimator):
             X = np.insert(X, 0, 1, axis=1)
 
         module = LogisticModule()
-        module.weights = np.random.multivariate_normal(np.zeros(X.shape[0]),
-                                                       np.diag(np.ones(X.shape[1]) / X.shape[1]))
-        if self.penalty_ is not None:
-            penalty = L1() if self.penalty_ == "l1" else L2()
-            module = RegularizedModule(module, penalty, self.lam_, module.weights,
-                                       self.include_intercept_)
+        module.weights_ = np.random.standard_normal(X.shape[1]) / (np.sqrt(X.shape[1]))
+        if self.penalty_ != "none":
+            penalty = L1(module.weights_) if self.penalty_ == "l1" else L2(module.weights_)
+            module = RegularizedModule(module, penalty, self.lam_, include_intercept=False)
 
         self.coefs_ = self.solver_.fit(module, X, y)
 
@@ -116,7 +114,7 @@ class LogisticRegression(BaseEstimator):
         responses : ndarray of shape (n_samples, )
             Predicted responses of given samples
         """
-        return self.predict_proba(X) >= self.alpha_
+        return (self.predict_proba(X) >= self.alpha_).astype(int)
 
     def predict_proba(self, X: np.ndarray) -> np.ndarray:
         """

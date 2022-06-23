@@ -2,13 +2,19 @@ import numpy as np
 import pandas as pd
 from typing import Tuple, List, Callable, Type
 
+from sklearn.metrics import roc_curve, auc
+
 from IMLearn import BaseModule
 from IMLearn.desent_methods import GradientDescent, FixedLR, ExponentialLR
 from IMLearn.desent_methods.modules import L1, L2
 from IMLearn.learners.classifiers.logistic_regression import LogisticRegression
+from IMLearn.metrics import misclassification_error
+from IMLearn.model_selection import cross_validate
 from IMLearn.utils import split_train_test
 
 import plotly.graph_objects as go
+
+from utils import custom
 
 
 def plot_descent_path(module: Type[BaseModule],
@@ -177,15 +183,53 @@ def fit_logistic_regression():
     X_train, y_train, X_test, y_test = load_data()
 
     # Plotting convergence rate of logistic regression over SA heart disease data
-    raise NotImplementedError()
+    logreg = LogisticRegression(solver=GradientDescent(FixedLR(1e-4), max_iter=20000))
+    X_train, y_train, X_test, y_test = X_train.to_numpy(), y_train.to_numpy(), X_test.to_numpy(), y_test.to_numpy()
+    logreg.fit(X_train, y_train)
+
+    fpr, tpr, thresholds = roc_curve(y_train, logreg.predict_proba(X_train))
+    c = [custom[0], custom[-1]]
+    go.Figure(
+        data=[go.Scatter(x=[0, 1], y=[0, 1], mode="lines", line=dict(color="black", dash='dash'),
+                         name="Random Class Assignment"),
+              go.Scatter(x=fpr, y=tpr, mode='markers+lines', text=thresholds, name="", showlegend=False, marker_size=5,
+                         marker_color=c[1][1],
+                         hovertemplate="<b>Threshold:</b>%{text:.3f}<br>FPR: %{x:.3f}<br>TPR: %{y:.3f}")],
+        layout=go.Layout(title=rf"$\text{{ROC Curve Of Fitted Model - AUC}}={auc(fpr, tpr):.6f}$",
+                         xaxis=dict(title=r"$\text{False Positive Rate (FPR)}$"),
+                         yaxis=dict(title=r"$\text{True Positive Rate (TPR)}$"))).show(renderer="browser")
+
+    alpha_star = np.argmax(tpr - fpr)
+    best_alpha = thresholds[alpha_star]
+    print(f"The alpha that achieves the optimal ROC value is: {best_alpha} \n")
+
+    logreg.alpha_ = best_alpha
+    optimal_loss = logreg.loss(X_test, y_test)
+    print(f"Model's loss for Optimal alpha is: {optimal_loss}\n")
 
     # Fitting l1- and l2-regularized logistic regression models, using cross-validation to specify values
     # of regularization parameter
-    raise NotImplementedError()
+    lambdas = [0.001, 0.002, 0.005, 0.01, 0.02, 0.05, 0.1]
+    for pen in ["l1", "l2"]:
+        losses = []
+        for lam in lambdas:
+            logreg = LogisticRegression(solver=GradientDescent(FixedLR(1e-4), max_iter=20000), penalty=pen, lam=lam)
+            train_loss, validation_loss = cross_validate(logreg, X_train, y_train, misclassification_error)
+            losses.append(validation_loss)
+
+        lambda_star = np.argmin(losses)
+        best_lambda = lambdas[lambda_star]
+        print(f"Best lambda for {pen} is: {best_lambda}\n")
+
+        best_logreg = LogisticRegression(solver=GradientDescent(FixedLR(1e-4), max_iter=20000), penalty=pen,
+                                         lam=best_lambda)
+        best_logreg.fit(X_train, y_train)
+        optimal_loss = best_logreg.loss(X_test, y_test)
+        print(f"Model's loss for {pen} with best lambda is: {optimal_loss}\n")
 
 
 if __name__ == '__main__':
     np.random.seed(0)
     compare_fixed_learning_rates()
     compare_exponential_decay_rates()
-    # fit_logistic_regression()
+    fit_logistic_regression()

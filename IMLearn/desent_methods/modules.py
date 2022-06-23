@@ -157,8 +157,7 @@ class LogisticModule(BaseModule):
         x_w = X @ self.weights
         exp_x_w = np.exp(x_w)
         inner = exp_x_w / (1 + exp_x_w)
-        return - np.mean(X * (y - inner))
-        # return - np.mean(X * (y - inner)[:, None], axis=0)  # TODO: can be without axis?
+        return - np.mean(X.T * (y - inner), axis=1)
 
 
 class RegularizedModule(BaseModule):
@@ -177,21 +176,16 @@ class RegularizedModule(BaseModule):
                  include_intercept: bool = True):
         """
         Initialize a regularized objective module instance
-
         Parameters:
         -----------
         fidelity_module: BaseModule
             Module to be used as a fidelity term
-
         regularization_module: BaseModule
             Module to be used as a regularization term
-
         lam: float, default=1
             Value of regularization parameter
-
         weights: np.ndarray, default=None
             Initial value of weights
-
         include_intercept: bool default=True
             Should fidelity term (and not regularization term) include an intercept or not
         """
@@ -205,59 +199,52 @@ class RegularizedModule(BaseModule):
     def compute_output(self, **kwargs) -> np.ndarray:
         """
         Compute the output value of the regularized objective function at point self.weights
-
         Parameters
         ----------
         kwargs:
             No additional arguments are expected
-
         Returns
         -------
         output: ndarray of shape (1,)
             Value of function at point self.weights
         """
-        return self.fidelity_module_.compute_output() + self.lam_ * self.regularization_module_.compute_output()
+        return self.fidelity_module_.compute_output(**kwargs) + self.lam_ * self.regularization_module_.compute_output(**kwargs)
 
     def compute_jacobian(self, **kwargs) -> np.ndarray:
         """
         Compute module derivative with respect to self.weights at point self.weights
-
         Parameters
         ----------
         kwargs:
             No additional arguments are expected
-
         Returns
         -------
         output: ndarray of shape (n_in,)
             Derivative with respect to self.weights at point self.weights
         """
-        reg_term = self.lam_ * self.regularization_module_.compute_jacobian()
+        reg_term = self.lam_ * self.regularization_module_.compute_jacobian(**kwargs)
 
         if self.include_intercept_:
             reg_term = np.insert(reg_term, 0, 0.0)
 
-        return self.fidelity_module_.compute_jacobian() + reg_term
+        return self.fidelity_module_.compute_jacobian(**kwargs) + reg_term
 
     @property
     def weights(self):
         """
         Wrapper property to retrieve module parameter
-
         Returns
         -------
         weights: ndarray of shape (n_in, n_out)
         """
-        return self.weights
+        return self.fidelity_module_.weights
 
     @weights.setter
     def weights(self, weights: np.ndarray) -> None:
         """
         Setter function for module parameters
-
         In case self.include_intercept_ is set to True, weights[0] is regarded as the intercept
         and is not passed to the regularization module
-
         Parameters
         ----------
         weights: ndarray of shape (n_in, n_out)
