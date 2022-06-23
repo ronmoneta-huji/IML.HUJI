@@ -87,42 +87,57 @@ def get_gd_state_recorder_callback() -> Tuple[Callable[[], None], List[np.ndarra
     return callback, values, callback_weights
 
 
-def plot_modules(init: np.ndarray, etas: Tuple[float], l_module: Type[BaseModule], title: str):
-    fig = go.Figure(layout=go.Layout(xaxis_title='GD Iterations',
-                                     xaxis_range=[0, 1000],
-                                     yaxis_title='Norm',
-                                     yaxis_range=[0, 3],
-                                     title=f"{title} Convergence rate"))
-    for eta in etas:
-        learning_rate = FixedLR(eta)
-        module = l_module(init)
-        callback, values, weights = get_gd_state_recorder_callback()
-        gd = GradientDescent(learning_rate, callback=callback)
-        gd.fit(module, None, None)
-        plot_descent_path(l_module, np.array(weights), f"{title} Descent path with eta: {eta}").show(renderer="browser")
-        fig.add_trace(go.Scatter(x=np.arange(len(values)), y=values, mode="lines", name=f"eta: {eta}"))
-        print(f"Lowest loss achieved when minimizing {title} with eta={eta}: {min(values)}")
-
-    fig.show(renderer="browser")
-
-
 def compare_fixed_learning_rates(init: np.ndarray = np.array([np.sqrt(2), np.e / 3]),
                                  etas: Tuple[float] = (1, .1, .01, .001)):
-    plot_modules(init, etas, L1, "L1")
-    plot_modules(init, etas, L2, "L2")
+    min_vals = []
+    for l_module in [L1, L2]:
+        fig = go.Figure(layout=go.Layout(xaxis_title='GD Iterations',
+                                         xaxis_range=[0, 1000],
+                                         yaxis_title='Norm',
+                                         yaxis_range=[0, 3],
+                                         title=f"{l_module.__name__} Convergence rate"))
+        for eta in etas:
+            learning_rate = FixedLR(eta)
+            module = l_module(init)
+            callback, values, weights = get_gd_state_recorder_callback()
+            gd = GradientDescent(learning_rate, callback=callback)
+            gd.fit(module, None, None)
+            plot_descent_path(l_module, np.array(weights), f"{l_module.__name__} Descent path with eta: {eta}").show(
+                renderer="browser")
+            fig.add_trace(go.Scatter(x=np.arange(len(values)), y=values, mode="lines", name=f"eta: {eta}"))
+            min_vals.append(min(values))
+            print(f"Lowest loss achieved when minimizing {l_module.__name__} with eta={eta}: {min(values)}")
+
+        fig.show(renderer="browser")
+        print(f"Lowest loss achieved when minimizing {l_module.__name__}: {min(min_vals)}\n")
 
 
 def compare_exponential_decay_rates(init: np.ndarray = np.array([np.sqrt(2), np.e / 3]),
                                     eta: float = .1,
                                     gammas: Tuple[float] = (.9, .95, .99, 1)):
     # Optimize the L1 objective using different decay-rate values of the exponentially decaying learning rate
-    raise NotImplementedError()
-
     # Plot algorithm's convergence for the different values of gamma
-    raise NotImplementedError()
-
     # Plot descent path for gamma=0.95
-    raise NotImplementedError()
+    fig = go.Figure(layout=go.Layout(xaxis_title='GD Iterations',
+                                     # xaxis_range=[0, 1000],
+                                     yaxis_title='Norm',
+                                     # yaxis_range=[0, 3],
+                                     title=f"L1 Exponential Convergence rate"))
+    min_vals = []
+    for gamma in gammas:
+        learning_rate = ExponentialLR(eta, gamma)
+        module = L1(init)
+        callback, values, weights = get_gd_state_recorder_callback()
+        gd = GradientDescent(learning_rate, callback=callback)
+        gd.fit(module, None, None)
+        fig.add_trace(go.Scatter(x=np.arange(len(values)), y=values, mode="lines", name=f"gamma: {gamma}"))
+        min_vals.append(min(values))
+        print(f"Lowest loss achieved when minimizing L1 with gamma={gamma}: {min(values)}")
+        if gamma == 0.95:
+            plot_descent_path(L1, np.array(weights), f"L1 Descent path with gamma: {gamma}").show(
+                renderer="browser")
+    fig.show(renderer="browser")
+    print(f"Lowest loss achieved when minimizing L1: {min(min_vals)}\n")
 
 
 def load_data(path: str = "../datasets/SAheart.data", train_portion: float = .8) -> \
@@ -172,5 +187,5 @@ def fit_logistic_regression():
 if __name__ == '__main__':
     np.random.seed(0)
     compare_fixed_learning_rates()
-    # compare_exponential_decay_rates()
+    compare_exponential_decay_rates()
     # fit_logistic_regression()
